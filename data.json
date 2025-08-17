@@ -1,33 +1,95 @@
 {
-  "stock": {
-    "SKU123": {
-      "available_qty": 150,
-      "reserved_qty": 20,
-      "location": "Warehouse A"
-    },
-    "SKU456": {
-      "available_qty": 75,
-      "reserved_qty": 15,
-      "location": "Warehouse B"
-    },
-    "SKU789": {
-      "available_qty": 200,
-      "reserved_qty": 30,
-      "location": "Warehouse A"
-    }
-  },
-  "orders": {
-    "ORD001": {
-      "status": "Shipped",
-      "eta": "2025-08-01"
-    },
-    "ORD002": {
-      "status": "Processing",
-      "eta": "2025-08-15"
-    },
-    "ORD003": {
-      "status": "Delivered",
-      "eta": "2025-07-25"
-    }
-  }
+    "stock": [
+        {
+            "id": 1,
+            "sku": "SKU123",
+            "available_qty": 150,
+            "reserved_qty": 20,
+            "location": "Warehouse A",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        },
+        {
+            "id": 2,
+            "sku": "SKU456",
+            "available_qty": 75,
+            "reserved_qty": 15,
+            "location": "Warehouse B",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        },
+        {
+            "id": 3,
+            "sku": "SKU789",
+            "available_qty": 200,
+            "reserved_qty": 30,
+            "location": "Warehouse A",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        }
+    ],
+    "orders": [
+        {
+            "id": "ORD001",
+            "customer_id": "CUST001",
+            "status": "Shipped",
+            "eta": "2025-08-01",
+            "total_amount": 1250.0,
+            "created_at": "2025-07-15T10:30:00Z",
+            "updated_at": "2025-07-20T14:45:00Z"
+        },
+        {
+            "id": "ORD002",
+            "customer_id": "CUST002",
+            "status": "Processing",
+            "eta": "2025-08-15",
+            "total_amount": 890.5,
+            "created_at": "2025-07-25T09:15:00Z",
+            "updated_at": "2025-07-25T09:15:00Z"
+        },
+        {
+            "id": "ORD003",
+            "customer_id": "CUST003",
+            "status": "Delivered",
+            "eta": "2025-07-25",
+            "total_amount": 2100.0,
+            "created_at": "2025-07-10T16:20:00Z",
+            "updated_at": "2025-07-25T11:30:00Z"
+        }
+    ],
+    "purchase_orders": [
+        {
+            "id": "POE115A9",
+            "sku": "SKU456",
+            "quantity": 50,
+            "status": "Pending",
+            "supplier_id": "SUPP001",
+            "unit_price": 25.0,
+            "total_amount": 1250.0,
+            "created_at": "2025-08-10T20:26:13Z",
+            "updated_at": "2025-08-10T20:26:13Z"
+        },
+        {
+            "id": "PO247EA3",
+            "sku": "SKU456",
+            "quantity": 100,
+            "status": "Pending",
+            "supplier_id": "SUPP001",
+            "unit_price": 25.0,
+            "total_amount": 2500.0,
+            "created_at": "2025-08-10T20:27:00Z",
+            "updated_at": "2025-08-10T20:27:00Z"
+        },
+        {
+            "id": "PODCFADE",
+            "sku": "SKU123",
+            "quantity": 25,
+            "status": "Pending",
+            "supplier_id": "SUPP001",
+            "unit_price": 25.0,
+            "total_amount": 625.0,
+            "created_at": "2025-08-16T22:58:38.149328Z",
+            "updated_at": "2025-08-16T22:58:38.149328Z"
+        }
+    ]
 }
