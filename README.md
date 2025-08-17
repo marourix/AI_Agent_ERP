@@ -199,5 +199,5 @@ And so on...
  **REST API**: Standard endpoints for all operations  
  **Error handling**: Validation and robust error management
 
- ![localhost/purchase_orders]"images\Capture d'écran 2025-08-16 230534.png"
- ![localhost/stock]"images\Capture d'écran 2025-08-16 230607.png"
+ ![localhost/purchase_orders](images\Capture d'écran 2025-08-16 230534.png)
+ ![localhost/stock](images\Capture d'écran 2025-08-16 230607.png)
