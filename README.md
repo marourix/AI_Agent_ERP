@@ -19,8 +19,8 @@ An intelligent agent for ERP (Enterprise Resource Planning) management that simu
 
 1. **Clone the project**
 ```bash
-git clone <repository-url>
-cd AtracioAgent
+git clone https://github.com/marourix/AI_Agent_ERP.git
+cd AI_Agent_ERP
 ```
 
 2. **Install dependencies**
