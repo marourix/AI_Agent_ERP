@@ -1,0 +1,573 @@
+{
+  "name": "Atracio ERP Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "atracio-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "atracio-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "check_stock"
+            }
+          ]
+        }
+      },
+      "id": "check-stock-condition",
+      "name": "Check Stock Condition",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "create_purchase_order"
+            }
+          ]
+        }
+      },
+      "id": "create-po-condition",
+      "name": "Create PO Condition",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "check_order_status"
+            }
+          ]
+        }
+      },
+      "id": "check-order-condition",
+      "name": "Check Order Condition",
+      "type": "typeVersion": 1,
+      "position": [460, 700]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "get_all_stock"
+            }
+          ]
+        }
+      },
+      "id": "get-all-stock-condition",
+      "name": "Get All Stock Condition",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 900]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "get_all_orders"
+            }
+          ]
+        }
+      },
+      "id": "get-all-orders-condition",
+      "name": "Get All Orders Condition",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.action }}",
+              "operation": "equals",
+              "value2": "get_all_purchase_orders"
+            }
+          ]
+        }
+      },
+      "id": "get-all-po-condition",
+      "name": "Get All PO Condition",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 1300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/stock/{{ $json.sku }}",
+        "options": {}
+      },
+      "id": "check-stock-api",
+      "name": "Check Stock API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/purchase-orders",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sku",
+              "value": "={{ $json.sku }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ $json.quantity }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-po-api",
+      "name": "Create Purchase Order API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/orders/{{ $json.order_id }}",
+        "options": {}
+      },
+      "id": "check-order-api",
+      "name": "Check Order API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/stock",
+        "options": {}
+      },
+      "id": "get-all-stock-api",
+      "name": "Get All Stock API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 800]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/orders",
+        "options": {}
+      },
+      "id": "get-all-orders-api",
+      "name": "Get All Orders API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 1000]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5000/purchase-orders",
+        "options": {}
+      },
+      "id": "get-all-po-api",
+      "name": "Get All Purchase Orders API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 1200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour le stock\nconst data = $input.first().json;\n\nif (data.success) {\n  const item = data.data;\n  return {\n    success: true,\n    message: `${item.sku}: ${item.available_qty} units available, ${item.reserved_qty} units reserved at ${item.location}.`,\n    data: item\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-stock-response",
+      "name": "Format Stock Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour la création de bon de commande\nconst data = $input.first().json;\n\nif (data.success) {\n  const po = data.data;\n  return {\n    success: true,\n    message: `Purchase order ${po.id} has been successfully created.\\nSKU: ${po.sku}, Quantity: ${po.quantity} units, Status: ${po.status}, Total Amount: $${po.total_amount.toFixed(2)}.`,\n    data: po\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-po-response",
+      "name": "Format PO Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour le statut de commande\nconst data = $input.first().json;\n\nif (data.success) {\n  const order = data.data;\n  return {\n    success: true,\n    message: `Order ${order.id} → Status: ${order.status}, Expected delivery: ${order.eta}, Total: $${order.total_amount.toFixed(2)}.`,\n    data: order\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-order-response",
+      "name": "Format Order Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour tous les stocks\nconst data = $input.first().json;\n\nif (data.success) {\n  const stockItems = data.data;\n  if (!stockItems || stockItems.length === 0) {\n    return {\n      success: true,\n      message: 'No stock items available.'\n    };\n  }\n  \n  const stockList = stockItems.map(item => \n    `${item.sku}: ${item.available_qty} available at ${item.location}`\n  );\n  \n  return {\n    success: true,\n    message: 'Available stock:\\n' + stockList.join('\\n'),\n    data: stockItems\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-all-stock-response",
+      "name": "Format All Stock Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour toutes les commandes\nconst data = $input.first().json;\n\nif (data.success) {\n  const orders = data.data;\n  if (!orders || orders.length === 0) {\n    return {\n      success: true,\n      message: 'No orders found.'\n    };\n  }\n  \n  const orderList = orders.map(order => \n    `${order.id}: ${order.status} - ETA: ${order.eta}`\n  );\n  \n  return {\n    success: true,\n    message: 'All orders:\\n' + orderList.join('\\n'),\n    data: orders\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-all-orders-response",
+      "name": "Format All Orders Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 1000]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatage de la réponse pour tous les bons de commande\nconst data = $input.first().json;\n\nif (data.success) {\n  const purchaseOrders = data.data;\n  if (!purchaseOrders || purchaseOrders.length === 0) {\n    return {\n      success: true,\n      message: 'No purchase orders found.'\n    };\n  }\n  \n  const poList = purchaseOrders.map(po => \n    `${po.id}: ${po.sku} - ${po.quantity} units - ${po.status}`\n  );\n  \n  return {\n    success: true,\n    message: 'All purchase orders:\\n' + poList.join('\\n'),\n    data: purchaseOrders\n  };\n} else {\n  return {\n    success: false,\n    error: data.error || 'Unknown error'\n  };\n}"
+      },
+      "id": "format-all-po-response",
+      "name": "Format All PO Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 1200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nœud de réponse finale\nconst inputData = $input.all();\n\n// Trouver la première réponse valide\nlet response = null;\nfor (const item of inputData) {\n  if (item.json && item.json.success !== undefined) {\n    response = item.json;\n    break;\n  }\n}\n\nif (!response) {\n  response = {\n    success: false,\n    error: 'No valid response received'\n  };\n}\n\nreturn response;"
+      },
+      "id": "final-response",
+      "name": "Final Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validation des données d'entrée\nconst input = $input.first().json;\n\n// Vérifier que l'action est fournie\nif (!input.action) {\n  return {\n    success: false,\n    error: 'Action is required'\n  };\n}\n\n// Validation selon l'action\nswitch (input.action) {\n  case 'check_stock':\n    if (!input.sku) {\n      return {\n        success: false,\n        error: 'SKU is required for check_stock action'\n      };\n    }\n    break;\n    \n  case 'create_purchase_order':\n    if (!input.sku || !input.quantity) {\n      return {\n        success: false,\n        error: 'SKU and quantity are required for create_purchase_order action'\n      };\n    }\n    if (isNaN(input.quantity) || input.quantity <= 0) {\n      return {\n        success: false,\n        error: 'Quantity must be a positive number'\n      };\n    }\n    break;\n    \n  case 'check_order_status':\n    if (!input.order_id) {\n      return {\n        success: false,\n        error: 'Order ID is required for check_order_status action'\n      };\n    }\n    break;\n}\n\nreturn input;"
+      },
+      "id": "input-validation",
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 150]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Check Stock Condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create PO Condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Order Condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Stock Condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Orders Condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All PO Condition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock Condition": {
+      "main": [
+        [
+          {
+            "node": "Check Stock API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create PO Condition": {
+      "main": [
+        [
+          {
+            "node": "Create Purchase Order API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order Condition": {
+      "main": [
+        [
+          {
+            "node": "Check Order API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Stock Condition": {
+      "main": [
+        [
+          {
+            "node": "Get All Stock API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Orders Condition": {
+      "main": [
+        [
+          {
+            "node": "Get All Orders API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All PO Condition": {
+      "main": [
+        [
+          {
+            "node": "Get All Purchase Orders API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock API": {
+      "main": [
+        [
+          {
+            "node": "Format Stock Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Purchase Order API": {
+      "main": [
+        [
+          {
+            "node": "Format PO Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order API": {
+      "main": [
+        [
+          {
+            "node": "Format Order Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Stock API": {
+      "main": [
+        [
+          {
+            "node": "Format All Stock Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Orders API": {
+      "main": [
+        [
+          {
+            "node": "Format All Orders Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Purchase Orders API": {
+      "main": [
+        [
+          {
+            "node": "Format All PO Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Stock Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format PO Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Order Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format All Stock Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format All Orders Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format All PO Response": {
+      "main": [
+        [
+          {
+            "node": "Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Response": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-16T10:00:00.000Z",
+      "updatedAt": "2025-01-16T10:00:00.000Z",
+      "id": "atracio-erp",
+      "name": "Atracio ERP"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-16T10:00:00.000Z",
+  "versionId": "1"
+}
+

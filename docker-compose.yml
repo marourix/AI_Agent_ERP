@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL pour n8n
+  postgres:
+    image: postgres:15
+    container_name: atracio-postgres
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: atracio123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Instance n8n
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: atracio-n8n
+    environment:
+      # Configuration de la base de données
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: atracio123
+      
+      # Configuration n8n
+      N8N_BASIC_AUTH_ACTIVE: true
+      N8N_BASIC_AUTH_USER: admin
+      N8N_BASIC_AUTH_PASSWORD: atracio123
+      
+      # Configuration des webhooks
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      
+      # Variables d'environnement pour Atracio
+      ERP_API_URL: http://host.docker.internal:5000
+      WEBHOOK_SECRET: atracio-webhook-secret-2025
+      
+      # Configuration de sécurité
+      N8N_ENCRYPTION_KEY: atracio-encryption-key-32-chars-long
+      
+      # Logs
+      N8N_LOG_LEVEL: info
+      
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./atracio_n8n_workflow.json:/home/node/.n8n/workflows/atracio_workflow.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - atracio-network
+
+  # Serveur ERP Atracio (optionnel - si vous voulez le containeriser)
+  atracio-erp:
+    image: python:3.11-slim
+    container_name: atracio-erp-server
+    working_dir: /app
+    environment:
+      FLASK_ENV: development
+      FLASK_APP: erp_server.py
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install -r requirements.txt &&
+              python erp_server.py"
+    restart: unless-stopped
+    networks:
+      - atracio-network
+    depends_on:
+      - postgres
+
+  # Redis pour le cache (optionnel)
+  redis:
+    image: redis:7-alpine
+    container_name: atracio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - atracio-network
+
+  # Nginx pour le reverse proxy (optionnel)
+  nginx:
+    image: nginx:alpine
+    container_name: atracio-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - n8n
+      - atracio-erp
+    restart: unless-stopped
+    networks:
+      - atracio-network
+
+volumes:
+  postgres_data:
+    driver: local
+  n8n_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  atracio-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
