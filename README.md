@@ -34,12 +34,6 @@ ollama run llama3.2
 ```
 
 ##  Usage
-
-### One-click startup 
-```bash
-python start.py
-```
-
 ### Manual startup
 
 1. **Start the ERP server**
