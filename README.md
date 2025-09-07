@@ -60,7 +60,6 @@ AI_Agent/
 ├── agent.py              # Main AI agent
 ├── erp_server.py         # Flask server (mock ERP backend)
 ├── data.json             # Structured JSON database
-├── start.py              # Startup script for agent and ERP server
 ├── requirements.txt      # Python dependencies
 └── README.md            # Documentation
 ```
