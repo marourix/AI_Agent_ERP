@@ -1,6 +1,6 @@
-# Atracio ERP Agent
+# ERP AI Agent
 
-An intelligent agent for ERP (Enterprise Resource Planning) management that simulates a real business environment with a Flask API backend.
+An intelligent agent for ERP (Enterprise Resource Planning) management that simulates a real business environment implemented by the OPENAI agent SDK  with a Flask API backend.
 
 ##  Features
 
@@ -56,7 +56,7 @@ python agent.py
 
 ### File structure
 ```
-AtracioAgent/
+AI_Agent/
 ├── agent.py              # Main AI agent
 ├── erp_server.py         # Flask server (mock ERP backend)
 ├── data.json             # Structured JSON database
@@ -86,7 +86,7 @@ The Flask server exposes the following endpoints:
 - `PUT /purchase-orders/{id}` - Update a purchase order
 
 #### Health
-- `GET /Atracio` - Verify if the server is working or not
+- `GET /health` - Verify if the server is working or not
 
 ## Agent Features
 
