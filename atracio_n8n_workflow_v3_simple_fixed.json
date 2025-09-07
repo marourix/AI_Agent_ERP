@@ -1,0 +1,233 @@
+{
+  "name": "ERP Simple + Gmail Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trigger",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-1",
+              "name": "method",
+              "value": "={{ ($('Webhook In').first().json.method || $method || $json.method || '').toString().toUpperCase() || 'GET' }}",
+              "type": "string"
+            },
+            {
+              "id": "set-2",
+              "name": "action",
+              "value": "={{ $('Webhook In').first().json.action || $('Webhook In').first().json.body.action || 'stock' }}",
+              "type": "string"
+            },
+            {
+              "id": "set-3",
+              "name": "id",
+              "value": "={{ $json.id || $json.query.id }}",
+              "type": "string"
+            },
+            {
+              "id": "set-4",
+              "name": "sku",
+              "value": "={{ $json.sku || $json.query.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "set-5",
+              "name": "po_id",
+              "value": "={{ $json.po_id || $json.query.po_id }}",
+              "type": "string"
+            },
+            {
+              "id": "set-6",
+              "name": "data",
+              "value": "={{ $json.data || {} }}",
+              "type": "object"
+            },
+            {
+              "id": "set-7",
+              "name": "client_email",
+              "value": "={{ $json.client_email || $json.query.client_email || 'client@example.com' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize-input",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [380, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ ($json.method || $('Webhook In').first().json.method || $method || 'GET').toString().toUpperCase() }}",
+              "rightValue": "GET",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-2",
+              "leftValue": "={{ ($json.method || $('Webhook In').first().json.method || $method || 'GET').toString().toUpperCase() }}",
+              "rightValue": "DELETE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "method-check",
+      "name": "Method Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [560, 300]
+    },
+    {
+      "parameters": {
+        "method": "={{ ($json.method || $('Webhook In').first().json.method || $method || 'GET').toString().toUpperCase() }}",
+        "url": "=http://atracio-erp:5000/{{ $json.action }}{{ $json.sku ? '/' + $json.sku : '' }}{{ $json.id ? '/' + $json.id : '' }}{{ $json.po_id ? '/' + $json.po_id : '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/json" },
+            { "name": "User-Agent", "value": "n8n-erp-workflow/1.0" }
+          ]
+        },
+        "sendQuery": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": { "response": { "neverError": true, "responseFormat": "autodetect" } }
+        }
+      },
+      "id": "get-delete-request",
+      "name": "GET/DELETE Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 200]
+    },
+    {
+      "parameters": {
+        "method": "={{ ($json.method || $('Webhook In').first().json.method || $method || 'GET').toString().toUpperCase() }}",
+        "url": "=http://atracio-erp:5000/{{ $json.action }}{{ $json.sku ? '/' + $json.sku : '' }}{{ $json.id ? '/' + $json.id : '' }}{{ $json.po_id ? '/' + $json.po_id : '' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Accept", "value": "application/json" },
+            { "name": "User-Agent", "value": "n8n-erp-workflow/1.0" }
+          ]
+        },
+        "sendQuery": false,
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json.data || {}) }}",
+        "options": {
+          "timeout": 30000,
+          "response": { "response": { "neverError": true, "responseFormat": "autodetect" } }
+        }
+      },
+      "id": "post-put-patch-request",
+      "name": "POST/PUT/PATCH Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "success", "value": "={{ $json.success !== undefined ? $json.success : ($json.statusCode >= 200 && $json.statusCode < 300) }}", "type": "boolean" },
+            { "id": "a2", "name": "status_code", "value": "={{ $json.statusCode || 200 }}", "type": "number" },
+            { "id": "a3", "name": "message", "value": "={{ $json.message || 'Request completed' }}", "type": "string" },
+            { "id": "a4", "name": "data", "value": "={{ (() => { const src = ($json.data !== undefined ? $json.data : ($json.body !== undefined ? $json.body : $json)); if (Array.isArray(src)) { return { items: src, count: ($json.count !== undefined ? $json.count : src.length) }; } if (typeof src === 'object' && src !== null) { return src; } return { raw: src }; })() }}", "type": "object" },
+            { "id": "a5", "name": "timestamp", "value": "={{ new Date().toISOString() }}", "type": "string" },
+            { "id": "a6", "name": "method", "value": "={{ ($json.method || $('Webhook In').first().json.method || $method || 'GET').toString().toUpperCase() }}", "type": "string" },
+            { "id": "a7", "name": "action", "value": "={{ $('Normalize Input').first().json.action }}", "type": "string" },
+            { "id": "a8", "name": "client_email", "value": "={{ $('Normalize Input').first().json.client_email }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "marouriy@gmail.com",
+        "toEmail": "={{ $json.client_email }}",
+        "subject": "={{ `ERP Response - ${$json.action} - ${$json.timestamp}` }}",
+        "message": "={{ (() => {\n  const action = $json.action;\n  const data = $json.data;\n  const items = data && data.items ? data.items : [];\n  \n  let dataHtml = '';\n  \n  if (action === 'stock') {\n    dataHtml = items.map(item => `\n      <div class=\"item\">\n        <p><span class=\"label\">SKU:</span> <span class=\"value\">${item.sku || 'N/A'}</span></p>\n        <p><span class=\"label\">Available:</span> <span class=\"value\">${item.available_qty || 'N/A'}</span></p>\n        <p><span class=\"label\">Reserved:</span> <span class=\"value\">${item.reserved_qty || 'N/A'}</span></p>\n        <p><span class=\"label\">Location:</span> <span class=\"value\">${item.location || 'N/A'}</span></p>\n        <p><span class=\"label\">Updated:</span> <span class=\"value\">${item.updated_at || 'N/A'}</span></p>\n      </div>\n    `).join('');\n  } else if (action === 'orders') {\n    dataHtml = items.map(item => `\n      <div class=\"item\">\n        <p><span class=\"label\">Order ID:</span> <span class=\"value\">${item.id || 'N/A'}</span></p>\n        <p><span class=\"label\">PO ID:</span> <span class=\"value\">${item.po_id || 'N/A'}</span></p>\n        <p><span class=\"label\">Status:</span> <span class=\"value\">${item.status || 'N/A'}</span></p>\n        <p><span class=\"label\">Customer:</span> <span class=\"value\">${item.customer_name || 'N/A'}</span></p>\n        <p><span class=\"label\">Total Amount:</span> <span class=\"value\">${item.total_amount || 'N/A'}</span></p>\n        <p><span class=\"label\">Created:</span> <span class=\"value\">${item.created_at || 'N/A'}</span></p>\n        <p><span class=\"label\">Updated:</span> <span class=\"value\">${item.updated_at || 'N/A'}</span></p>\n      </div>\n    `).join('');\n  } else if (action === 'products') {\n    dataHtml = items.map(item => `\n      <div class=\"item\">\n        <p><span class=\"label\">Product ID:</span> <span class=\"value\">${item.id || 'N/A'}</span></p>\n        <p><span class=\"label\">Name:</span> <span class=\"value\">${item.name || 'N/A'}</span></p>\n        <p><span class=\"label\">SKU:</span> <span class=\"value\">${item.sku || 'N/A'}</span></p>\n        <p><span class=\"label\">Price:</span> <span class=\"value\">${item.price || 'N/A'}</span></p>\n        <p><span class=\"label\">Category:</span> <span class=\"value\">${item.category || 'N/A'}</span></p>\n        <p><span class=\"label\">Updated:</span> <span class=\"value\">${item.updated_at || 'N/A'}</span></p>\n      </div>\n    `).join('');\n  } else {\n    dataHtml = items.map(item => `\n      <div class=\"item\">\n        <pre>${JSON.stringify(item, null, 2)}</pre>\n      </div>\n    `).join('');\n  }\n  \n  if (!dataHtml) {\n    dataHtml = '<p>No data available</p>';\n  }\n  \n  return `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .header { background: #f4f4f4; padding: 20px; border-radius: 5px; margin-bottom: 20px; }\n    .status { background: #e8f5e8; padding: 15px; border-left: 4px solid #4CAF50; margin: 15px 0; }\n    .data-section { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0; }\n    .item { background: white; padding: 10px; margin: 10px 0; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .label { font-weight: bold; color: #555; }\n    .value { color: #333; }\n    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }\n    pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }\n  </style>\n</head>\n<body>\n  <div class=\"header\">\n    <h2>📊 ERP System Response</h2>\n    <p>Your request has been processed successfully</p>\n  </div>\n  \n  <div class=\"status\">\n    <p><span class=\"label\">Action:</span> <span class=\"value\">${$json.action}</span></p>\n    <p><span class=\"label\">Method:</span> <span class=\"value\">${$json.method}</span></p>\n    <p><span class=\"label\">Status:</span> <span class=\"value\">${$json.status_code}</span></p>\n  </div>\n  \n  <div class=\"data-section\">\n    <h3>📋 Response Data</h3>\n    ${dataHtml}\n  </div>\n  \n  <div class=\"footer\">\n    <p><span class=\"label\">Timestamp:</span> <span class=\"value\">${$json.timestamp}</span></p>\n    <p>Best regards,<br>ERP System</p>\n    <p><em>This email was sent automatically with n8n</em></p>\n  </div>\n</body>\n</html>`;\n})() }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        },
+        "emailType": "html"
+      },
+      "id": "gmail-notification",
+      "name": "Gmail Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1160, 200]
+    }
+  ],
+  "connections": {
+    "Webhook In": { "main": [[{ "node": "Normalize Input", "type": "main", "index": 0 }]] },
+    "Normalize Input": { "main": [[{ "node": "Method Check", "type": "main", "index": 0 }]] },
+    "Method Check": {
+      "main": [
+        [{ "node": "GET/DELETE Request", "type": "main", "index": 0 }],
+        [{ "node": "POST/PUT/PATCH Request", "type": "main", "index": 0 }]
+      ]
+    },
+    "GET/DELETE Request": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] },
+    "POST/PUT/PATCH Request": { "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]] },
+    "Format Response": {
+      "main": [
+        [{ "node": "Gmail Notification", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-09-07T15:00:00.000Z",
+  "versionId": "6",
+  "id": "erp-simple-gmail-workflow",
+  "active": false,
+  "createdAt": "2025-09-07T15:00:00.000Z"
+}
